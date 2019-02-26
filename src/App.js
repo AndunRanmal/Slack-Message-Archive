@@ -11,8 +11,7 @@ import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import Button from '@material-ui/core/Button';
-import TextField from '@material-ui/core/TextField';
+import IntegrationAutosuggest from './AutoSuggest';
 
 
 import logo from './icon_slack.png';
@@ -43,16 +42,10 @@ class App extends Component {
             value: '',
             messages: [],
             users: null,
-            channels: null
+            channels: null,
+            suggestions: []
         };
     }
-
-    handleChange = (event) => {
-        this.setState({
-            value: event.target.value,
-            messages: []
-        });
-    };
 
     componentDidMount() {
         axios.get(APIs.slack.slack_users + "?token="+slack_token)
@@ -88,67 +81,72 @@ class App extends Component {
     };
 
 
-    handleSubmit = () => {
+    handleSubmit = (searchTerm) => {
         this.setState({
-            messages: []
+            messages: [],
+            value: searchTerm
+        },() => {
+            switch (this.state.value) {
+                case ("@" + this.state.value.slice(1)):
+                    let username = this.state.value.slice(1).toLocaleLowerCase();
+                    let sender_Id = this.state.users.find(user => user.name === username).id;
+                    console.log(sender_Id);
+                    axios.get(APIs.aws.base_url + "/chats?text=@" + sender_Id)
+                        .then(response => {
+                            if (response.data.length === 0) {
+                                console.log("No record found");
+                            }
+                            this.getMessages(response);
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            this.setState({
+                                messages: []
+                            })
+                        });
+                    break;
+                case ("#" + this.state.value.slice(1)):
+                    let channelName = this.state.value.slice(1).toLocaleLowerCase();
+                    let channel_Id = this.state.channels.find(channel => channel.name === channelName).id;
+                    axios.get(APIs.aws.base_url + "/chats?text=_" + channel_Id)
+                        .then(response => {
+                            if (response.data.length === 0) {
+                                console.log("No record found");
+                            }
+                            this.getMessages(response)
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            this.setState({
+                                messages: []
+                            })
+                        });
+                    break;
+                default:
+                    axios.get(APIs.aws.base_url + "/chats?text=" + this.state.value.toLocaleLowerCase())
+                        .then(response => {
+                            if (response.data.length === 0) {
+                                console.log("No record found");
+                            }
+                            this.getMessages(response)
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            this.setState({
+                                messages: []
+                            })
+                        });
+                    break;
+            }
         });
 
-        switch (this.state.value) {
-            case ("@" + this.state.value.slice(1)):
-                let username = this.state.value.slice(1).toLocaleLowerCase();
-                let sender_Id = this.state.users.find(user => user.name === username).id;
-                console.log(sender_Id);
-                axios.get(APIs.aws.base_url + "/chats?text=@" + sender_Id)
-                    .then(response => {
-                        if (response.data.length === 0) {
-                            console.log("No record found");
-                        }
-                        this.getMessages(response);
-                    })
-                    .catch(err => {
-                        console.log(err);
-                        this.setState({
-                            messages: []
-                        })
-                    });
-                break;
-            case ("#" + this.state.value.slice(1)):
-                let channelName = this.state.value.slice(1).toLocaleLowerCase();
-                let channel_Id = this.state.channels.find(channel => channel.name === channelName).id;
-                axios.get(APIs.aws.base_url + "/chats?text=_" + channel_Id)
-                    .then(response => {
-                        if (response.data.length === 0) {
-                            console.log("No record found");
-                        }
-                        this.getMessages(response)
-                    })
-                    .catch(err => {
-                        console.log(err);
-                        this.setState({
-                            messages: []
-                        })
-                    });
-                break;
-            default:
-                axios.get(APIs.aws.base_url + "/chats?text=" + this.state.value)
-                    .then(response => {
-                        if (response.data.length === 0) {
-                            console.log("No record found");
-                        }
-                        this.getMessages(response)
-                    })
-                    .catch(err => {
-                        console.log(err);
-                        this.setState({
-                            messages: []
-                        })
-                    });
-                break;
-        }
+
     };
 
 
     render() {
+        const { value } = this.state;
+
 
         const table = (
             <Paper>
@@ -157,8 +155,8 @@ class App extends Component {
                         <TableRow>
                             <CustomTableCell>Message</CustomTableCell>
                             <CustomTableCell align="center">Sender</CustomTableCell>
-                            <CustomTableCell align="center">Timestamp</CustomTableCell>
                             <CustomTableCell align="center">Channel</CustomTableCell>
+                            <CustomTableCell align="center">Timestamp</CustomTableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -169,9 +167,9 @@ class App extends Component {
                                         {row.message}
                                     </CustomTableCell>
                                     <CustomTableCell align="center">{row.username}</CustomTableCell>
+                                    <CustomTableCell align="center">{row.channel}</CustomTableCell>
                                     <CustomTableCell
                                         align="center">{moment.unix(row.timestamp).format('MMMM Do YYYY, h:mm:ss a')}</CustomTableCell>
-                                    <CustomTableCell align="center">{row.channel}</CustomTableCell>
                                 </TableRow>
                             );
                         })}
@@ -183,20 +181,8 @@ class App extends Component {
         return (
             <div className="App">
                 <header className="App-header">
-                    <TextField
-                        id="outlined-search"
-                        label="Search text, @name, #channel"
-                        type="search"
-                        margin="normal"
-                        variant="outlined"
-                        value={this.state.value} onChange={this.handleChange}
-                    />
-                    <Button variant="contained" size="small" color="primary" onClick={this.handleSubmit}
-                            style={{marginLeft: 10, marginTop: 40}}>
-                        Search
-                    </Button>
+                    <IntegrationAutosuggest searchQuery={this.handleSubmit}/>
                     <img src={logo} width={40} height={40} className="Logo-styles" alt=""/>
-
                 </header>
                 <div>
                     {table}
@@ -205,5 +191,6 @@ class App extends Component {
         );
     }
 }
+
 
 export default App;
