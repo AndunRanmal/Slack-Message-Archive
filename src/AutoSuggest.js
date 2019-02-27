@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import moment from 'moment';
 import Autosuggest from 'react-autosuggest';
 import match from 'autosuggest-highlight/match';
 import parse from 'autosuggest-highlight/parse';
@@ -52,6 +53,14 @@ const styles = theme => ({
     inputLabel: {
         color: 'red'
     },
+    textField: {
+        // marginLeft: theme.spacing.unit,
+        marginRight: theme.spacing.unit,
+        width: 200,
+        // marginBottom: 10,
+        // marginTop: 40,
+        marginLeft: 50
+    },
 });
 
 class IntegrationAutosuggest extends React.Component {
@@ -88,7 +97,8 @@ class IntegrationAutosuggest extends React.Component {
                     style: {
                         color: '#9f9f9f',
                         fontSize: 12
-                    } }}
+                    }
+                }}
             />
         );
     };
@@ -195,31 +205,35 @@ class IntegrationAutosuggest extends React.Component {
         };
 
         return (
-            <div style={{display: 'flex', flexDirection: 'row'}}>
-                <Autosuggest
-                    {...autosuggestProps}
-                    inputProps={{
-                        classes,
-                        value: this.state.value,
-                        onChange: this.handleChange('value'),
-                    }}
-                    theme={{
-                        container: classes.container,
-                        suggestionsContainerOpen: classes.suggestionsContainerOpen,
-                        suggestionsList: classes.suggestionsList,
-                        suggestion: classes.suggestion,
-                    }}
-                    renderSuggestionsContainer={options => (
-                        <Paper {...options.containerProps} square>
-                            {options.children}
-                        </Paper>
-                    )}
-                />
-                <Button variant="contained" size="small" color="primary" style={{marginLeft: 10, marginBottom: 10, marginTop: 40}}
-                        onClick={() => this.props.searchQuery(this.state.value)}>
-                    Search
-                </Button>
+            <div>
+                <div style={{display: 'flex', flexDirection: 'row'}}>
+                    <Autosuggest
+                        {...autosuggestProps}
+                        inputProps={{
+                            classes,
+                            value: this.state.value,
+                            onChange: this.handleChange('value'),
+                        }}
+                        theme={{
+                            container: classes.container,
+                            suggestionsContainerOpen: classes.suggestionsContainerOpen,
+                            suggestionsList: classes.suggestionsList,
+                            suggestion: classes.suggestion,
+                        }}
+                        renderSuggestionsContainer={options => (
+                            <Paper {...options.containerProps} square>
+                                {options.children}
+                            </Paper>
+                        )}
+                    />
+                    <Button variant="contained" size="small" color="primary"
+                            style={{marginLeft: 10, marginBottom: 10, marginTop: 40}}
+                            onClick={() => this.props.searchQuery(this.state.value)}>
+                        Search
+                    </Button>
+                </div>
             </div>
+
         );
     }
 }

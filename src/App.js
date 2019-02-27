@@ -16,6 +16,7 @@ import IntegrationAutosuggest from './AutoSuggest';
 
 import logo from './icon_slack.png';
 import APIs from './const/API';
+import TextField from "@material-ui/core/TextField/TextField";
 const env = require('dotenv').config();
 
 const slack_token = process.env.REACT_APP_SLACKTOKEN;
@@ -43,7 +44,9 @@ class App extends Component {
             messages: [],
             users: null,
             channels: null,
-            suggestions: []
+            suggestions: [],
+            fromDate: '',
+            toDate: ''
         };
     }
 
@@ -143,10 +146,22 @@ class App extends Component {
 
     };
 
+    handleFilter = (event) => {
+      console.log(event.target.value);
+    };
+
 
     render() {
         const { value } = this.state;
 
+        const filteredData = this.state.messages.filter(message => message.timestamp >= this.state.fromDate && message.timestamp <= this.state.toDate);
+        console.log(filteredData);
+        let data;
+        if (this.state.toDate === "" && this.state.fromDate === "") {
+            data = this.state.messages
+        } else {
+            data = filteredData
+        }
 
         const table = (
             <Paper>
@@ -156,11 +171,65 @@ class App extends Component {
                             <CustomTableCell>Message</CustomTableCell>
                             <CustomTableCell align="center">Sender</CustomTableCell>
                             <CustomTableCell align="center">Channel</CustomTableCell>
-                            <CustomTableCell align="center">Timestamp</CustomTableCell>
+                            <CustomTableCell align="center">
+                                Timestamp (Filter with Date)
+                                <br/>
+                                <div >
+                                    <TextField
+                                        id="dateFrom"
+                                        label="From"
+                                        type="date"
+                                        onChange={(event) => this.setState({fromDate: new Date(event.target.value).getTime()/1000}, () => console.log(this.state.fromDate))}
+                                        // defaultValue= {moment().format("YYYY-MM-DD")}
+                                        className="DatePicker"
+                                        InputLabelProps={{
+                                            shrink: true,
+                                            style: {
+                                                color: '#fff',
+                                                fontSize: 16,
+                                                marginLeft: 100
+                                            }
+                                        }}
+                                        inputProps={{
+                                            style: {
+                                                color: "#fff",
+                                                fontSize: 12,
+                                                marginLeft: 100
+                                            }
+                                        }}
+                                    />
+                                    <TextField
+                                        id="dateFrom"
+                                        label="To"
+                                        type="date"
+                                        onChange={(event) => this.setState({toDate: new Date(event.target.value).getTime()/1000}, () => console.log(this.state.toDate))}
+                                        // defaultValue= {moment().format("YYYY-MM-DD")}
+                                        className="DatePicker"
+                                        InputLabelProps={{
+                                            shrink: true,
+                                            style: {
+                                                color: '#fff',
+                                                fontSize: 16,
+                                                paddingLeft: 10
+                                            }
+                                        }}
+                                        inputProps={{
+                                            style: {
+                                                color: "#fff",
+                                                fontSize: 12,
+                                                paddingLeft: 10
+                                            },
+                                            // value: this.state.fromDate,
+                                            // onChange: this.setState({fromDate: value})
+                                        }}
+                                    />
+                                </div>
+
+                            </CustomTableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {this.state.messages.map(row => {
+                        {data.map(row => {
                             return (
                                 <TableRow key={row.message_id}>
                                     <CustomTableCell component="th" scope="row">

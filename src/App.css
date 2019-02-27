@@ -29,15 +29,11 @@
     right: 20px;
     top: 20px;
 }
-
-/*.Suggestion-list {*/
-    /*margin: 0;*/
-    /*padding: 0;*/
-    /*listStyleType: 'none';*/
-    /*display: block;*/
-    /*color: #61dafb;*/
-    /*position: absolute;*/
-/*}*/
+.DatePicker {
+    /*background-color: #727272;*/
+    font-size: 14px;
+    color: blueviolet;
+}
 
 
 @keyframes App-logo-spin {
