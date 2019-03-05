@@ -23,7 +23,6 @@
     color: #61dafb;
 }
 
-
 .Logo-styles {
     position: absolute;
     right: 20px;
@@ -33,6 +32,76 @@
     /*background-color: #727272;*/
     font-size: 14px;
     color: blueviolet;
+}
+
+.Channels-container {
+    background-color: #1f0c1f;
+    padding-top: 3px;
+}
+
+.Channel-title {
+    color: #fff;
+    margin-left: 20px;
+}
+
+.Channel-list {
+    height: 710px;
+    overflow: scroll;
+    background-color: #3F0F3F;
+}
+
+.Message-container {
+    height: 700px;
+    overflow: scroll;
+    margin-top: 4px;
+}
+
+.Message-row {
+    display: flex;
+    flex-direction: row;
+    padding-left: 15px;
+}
+
+.Message-sender {
+    margin-top: 3px;
+    padding-left: 15px;
+    font-size: 14px;
+}
+
+.Message-text {
+    font-size: 13px;
+    /*margin-top: 2px;*/
+    font-weight: 500;
+}
+
+.Message-time {
+    margin-top: 2px;
+    font-size: 11px;
+    padding-left: 10px;
+    font-weight: 400;
+}
+
+.Message-date {
+    position: relative;
+    font-size: 12px;
+    z-index: 1;
+    overflow: hidden;
+    text-align: center;
+    font-weight: 600;
+    padding: 10px;
+}
+.Message-date:before, .Message-date:after {
+    position: absolute;
+    top: 51%;
+    overflow: hidden;
+    width: 50%;
+    height: 1px;
+    content: '\a0';
+    background-color: #abb1a9;
+}
+.Message-date:before {
+    margin-left: -50%;
+    text-align: right;
 }
 
 

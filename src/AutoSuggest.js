@@ -8,6 +8,7 @@ import TextField from '@material-ui/core/TextField';
 import Paper from '@material-ui/core/Paper';
 import MenuItem from '@material-ui/core/MenuItem';
 import {withStyles} from '@material-ui/core/styles';
+import Divider from '@material-ui/core/Divider';
 import axios from "axios";
 import APIs from "./const/API";
 import Button from "@material-ui/core/Button/Button";
@@ -152,21 +153,25 @@ class IntegrationAutosuggest extends React.Component {
         const parts = parse(suggestion.name, matches);
 
         return (
-            <MenuItem selected={isHighlighted} component="div">
-                <div>
-                    {parts.map((part, index) =>
-                            part.highlight ? (
-                                <span key={String(index)} style={{fontWeight: 500}}>
+            <div>
+                <MenuItem selected={isHighlighted} component="div">
+                    <div>
+                        {parts.map((part, index) =>
+                                part.highlight ? (
+                                    <span key={String(index)} style={{fontWeight: 500}}>
               {part.text}
             </span>
-                            ) : (
-                                <strong key={String(index)} style={{fontWeight: 300}}>
-                                    {part.text}
-                                </strong>
-                            ),
-                    )}
-                </div>
-            </MenuItem>
+                                ) : (
+                                    <strong key={String(index)} style={{fontWeight: 300}}>
+                                        {part.text}
+                                    </strong>
+                                ),
+                        )}
+                    </div>
+
+                </MenuItem>
+                <Divider light/>
+            </div>
         );
     };
 
@@ -224,6 +229,7 @@ class IntegrationAutosuggest extends React.Component {
                             <Paper {...options.containerProps} square>
                                 {options.children}
                             </Paper>
+
                         )}
                     />
                     <Button variant="contained" size="small" color="primary"
