@@ -4,12 +4,7 @@ import moment from 'moment';
 import './App.css';
 
 import {withStyles} from '@material-ui/core/styles';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
 import Grid from "@material-ui/core/Grid";
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -20,7 +15,10 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import IconButton from '@material-ui/core/IconButton';
 import InfoIcon from '@material-ui/icons/Info';
-import MenuIcon from '@material-ui/icons/Menu';
+import CloudDownload from '@material-ui/icons/CloudDownload';
+import {Player} from 'video-react';
+import ButtonBase from '@material-ui/core/ButtonBase';
+import "./../node_modules/video-react/dist/video-react.css";
 
 import IntegrationAutosuggest from './AutoSuggest';
 
@@ -39,23 +37,6 @@ console.log(process.env);
 const converter = new showdown.Converter();
 let byday = {};
 
-// console.loz
-
-const CustomTableCell = withStyles(theme => ({
-    head: {
-        backgroundColor: theme.palette.common.black,
-        color: theme.palette.common.white,
-    },
-    body: {
-        fontSize: 14,
-    },
-}))(TableCell);
-
-const CustomListItemText = withStyles(theme => ({
-    body: {
-        backgroundColor: "#FFF",
-    },
-}))(ListItemText);
 
 class App extends Component {
     constructor(props) {
@@ -226,89 +207,6 @@ class App extends Component {
             data = filteredData
         }
 
-        const table = (
-            <Paper>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <CustomTableCell>Message</CustomTableCell>
-                            <CustomTableCell width="50">Sender</CustomTableCell>
-                            <CustomTableCell width="50">Channel</CustomTableCell>
-                            <CustomTableCell width="280">
-                                Timestamp (Filter with Date)
-                                <br/>
-                                <div>
-                                    <TextField
-                                        id="dateFrom"
-                                        label="From"
-                                        type="date"
-                                        onChange={(event) => this.setState({fromDate: new Date(event.target.value).getTime() / 1000}, () => console.log(this.state.fromDate))}
-                                        // defaultValue= {moment().format("YYYY-MM-DD")}
-                                        className="DatePicker"
-                                        InputLabelProps={{
-                                            shrink: true,
-                                            style: {
-                                                color: '#fff',
-                                                fontSize: 16,
-                                                // marginLeft: 100
-                                            }
-                                        }}
-                                        inputProps={{
-                                            style: {
-                                                color: "#fff",
-                                                fontSize: 12,
-                                                // marginLeft: 100
-                                            }
-                                        }}
-                                    />
-                                    <TextField
-                                        id="dateFrom"
-                                        label="To"
-                                        type="date"
-                                        onChange={(event) => this.setState({toDate: new Date(event.target.value).getTime() / 1000}, () => console.log(this.state.toDate))}
-                                        // defaultValue= {moment().format("YYYY-MM-DD")}
-                                        className="DatePicker"
-                                        InputLabelProps={{
-                                            shrink: true,
-                                            style: {
-                                                color: '#fff',
-                                                fontSize: 16,
-                                                // paddingLeft: 10
-                                            }
-                                        }}
-                                        inputProps={{
-                                            style: {
-                                                color: "#fff",
-                                                fontSize: 12,
-                                                // paddingLeft: 10
-                                            },
-                                            // value: this.state.fromDate,
-                                            // onChange: this.setState({fromDate: value})
-                                        }}
-                                    />
-                                </div>
-
-                            </CustomTableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {data.map(row => {
-                            return (
-                                <TableRow key={row.message_id}>
-                                    <CustomTableCell component="th" scope="row">
-                                        {row.message}
-                                    </CustomTableCell>
-                                    <CustomTableCell>{row.username}</CustomTableCell>
-                                    <CustomTableCell>{row.channel}</CustomTableCell>
-                                    <CustomTableCell>{moment.unix(row.timestamp).format('MMMM Do YYYY, h:mm:ss a')}</CustomTableCell>
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
-            </Paper>
-        );
-
         return (
             <div className="App">
                 <header className="App-header">
@@ -380,11 +278,36 @@ class App extends Component {
                                                                     {message.files !== undefined ?
                                                                         // console.log(typeof (JSON.parse(message.files)))
                                                                         JSON.parse(message.files).map(file => {
-                                                                            if (file.filetype === 'jpg' || 'jpeg' || 'png' || 'svg' || 'git') {
-                                                                                return(
-                                                                                    <img src={file.url_private} width={400} height={300} alt=""/>
-                                                                                )
+                                                                            switch (file.filetype) {
+                                                                                case 'jpg' || 'jpeg' || 'png' || 'svg' || 'gif':
+                                                                                    return(
+                                                                                        <img src={file.url_private} width={400} height={300} alt=""/>
+                                                                                    );
+                                                                                case 'mp4' || 'avi' || 'wmv':
+                                                                                    return(
+                                                                                        <Player src={file.url_private} fluid={false} height={300} width={400} alt=""/>
+                                                                                    );
+                                                                                default:
+                                                                                    return(
+                                                                                        <div>
+                                                                                            <ButtonBase
+                                                                                                focusRipple
+                                                                                                key={file.id}
+                                                                                                style={{width: 400, padding: 20, borderStyle: 'solid', borderWidth: 1, borderColor: "#d1cece", borderRadius: 7}}
+                                                                                                onClick={() => {return(<a href={file.url_private} />)}}>
+                                                                                                <CloudDownload style={{position: 'absolute',right: 355, color: "#7dc1de"}}/>
+                                                                                                <Typography style={{fontWeight: "700"}}>
+                                                                                                    {file.name}
+                                                                                                </Typography>
+                                                                                            </ButtonBase>
+                                                                                        </div>
+                                                                                    );
                                                                             }
+                                                                            // if (file.filetype === 'jpg' || 'jpeg' || 'png' || 'svg' || 'gif') {
+                                                                            //     return(
+                                                                            //         <img src={file.url_private} width={400} height={300} alt=""/>
+                                                                            //     )
+                                                                            // }
                                                                         })
                                                                         : console.log("No files")}
                                                                 </div>
