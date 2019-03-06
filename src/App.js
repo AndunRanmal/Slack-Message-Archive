@@ -103,7 +103,8 @@ class App extends Component {
                 message: message.message,
                 username: username,
                 timestamp: message.timestamp,
-                channel: channel
+                channel: channel,
+                files: message.files
             };
             this.setState({
                 messages: [...this.state.messages, messageInfo]
@@ -159,6 +160,7 @@ class App extends Component {
                             if (response.data.length === 0) {
                                 console.log("No record found");
                             }
+                            console.log(response.data);
                             this.getMessages(response)
                         })
                         .catch(err => {
@@ -343,7 +345,7 @@ class App extends Component {
                             <AppBar position="static" style={{ backgroundColor: '#2d162d'}}>
                                 <Toolbar>
                                     <IconButton
-                                        style={{position: 'absolute', left: "95%" }}
+                                        style={{position: 'absolute', right: 10  }}
                                         aria-haspopup="true"
                                         color="inherit"
                                     >
@@ -375,6 +377,16 @@ class App extends Component {
                                                             <h5 className="Message-sender"> {this.state.users.find(user => user.name === message.username).real_name}
                                                                 <div className="Message-text">
                                                                     {Parser(converter.makeHtml(message.message))}
+                                                                    {message.files !== undefined ?
+                                                                        // console.log(typeof (JSON.parse(message.files)))
+                                                                        JSON.parse(message.files).map(file => {
+                                                                            if (file.filetype === 'jpg' || 'jpeg' || 'png' || 'svg' || 'git') {
+                                                                                return(
+                                                                                    <img src={file.url_private} width={400} height={300} alt=""/>
+                                                                                )
+                                                                            }
+                                                                        })
+                                                                        : console.log("No files")}
                                                                 </div>
                                                             </h5>
                                                             <p className="Message-time">{moment.unix(message.timestamp).format('h:mm a')}</p>
