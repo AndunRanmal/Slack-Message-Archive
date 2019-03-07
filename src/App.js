@@ -1,10 +1,9 @@
-import React, {Component, Fragment} from 'react';
+import React, {Component} from 'react';
 import axios from 'axios';
 import moment from 'moment';
-import './App.css';
+import {Player} from 'video-react';
 
-import {withStyles} from '@material-ui/core/styles';
-import TableCell from '@material-ui/core/TableCell';
+//Material Ui
 import Grid from "@material-ui/core/Grid";
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -16,20 +15,19 @@ import Toolbar from '@material-ui/core/Toolbar';
 import IconButton from '@material-ui/core/IconButton';
 import InfoIcon from '@material-ui/icons/Info';
 import CloudDownload from '@material-ui/icons/CloudDownload';
-import {Player} from 'video-react';
 import ButtonBase from '@material-ui/core/ButtonBase';
 import "./../node_modules/video-react/dist/video-react.css";
 
 import IntegrationAutosuggest from './AutoSuggest';
-
-
+import './App.css';
 import logo from './icon_slack.png';
+import slackbot from './Slackbot.png';
 import APIs from './const/API';
-import TextField from "@material-ui/core/TextField/TextField";
 
+const env = require('dotenv').config();
 const showdown = require("showdown");
 const Parser = require('html-react-parser');
-const env = require('dotenv').config();
+
 
 const slack_token = process.env.REACT_APP_SLACKTOKEN;
 console.log(process.env);
@@ -88,6 +86,7 @@ class App extends Component {
                 files: message.files
             };
             this.setState({
+                groups: null,
                 messages: [...this.state.messages, messageInfo]
             })
         });
@@ -111,7 +110,7 @@ class App extends Component {
         this.setState({
             messages: [],
             value: searchTerm,
-            groups: null
+
         }, () => {
             switch (this.state.value) {
                 case ("@" + this.state.value.slice(1)):
@@ -186,14 +185,6 @@ class App extends Component {
         return byday;
     };
 
-    sortTimestamp = (array) => {
-        array.sort(function(a,b){
-            // Turn your strings into dates, and then subtract them
-            // to get a value that is either negative, positive, or zero.
-            // console.log(new Date(b.timestamp) - new Date(a.timestamp));
-            return new Date(b.timestamp) - new Date(a.timestamp);
-        });
-    };
 
     render() {
         const {classes} = this.props;
@@ -261,6 +252,7 @@ class App extends Component {
                                 {
 
                                     this.state.groups !== null ?
+
                                         Object.keys(this.state.groups).map(group => (
                                             <div>
                                                 <h1 className="Message-date">{moment.unix(Number(group)*(60*60*24)).format("dddd MMMM Do YYYY")}</h1>
@@ -294,10 +286,13 @@ class App extends Component {
                                                                                                 focusRipple
                                                                                                 key={file.id}
                                                                                                 style={{width: 400, padding: 20, borderStyle: 'solid', borderWidth: 1, borderColor: "#d1cece", borderRadius: 7}}
-                                                                                                onClick={() => {return(<a href={file.url_private} />)}}>
+                                                                                                onClick={() => window.location = file.url_private_download}>
                                                                                                 <CloudDownload style={{position: 'absolute',right: 355, color: "#7dc1de"}}/>
                                                                                                 <Typography style={{fontWeight: "700"}}>
                                                                                                     {file.name}
+                                                                                                    <Typography>
+                                                                                                        {Number(file.size)/(1024 * 1024) >= 1? Math.round(Number(file.size)/(1024 * 1024))+" MB " : Math.round(Number(file.size)/(1024))+" kb" }
+                                                                                                    </Typography>
                                                                                                 </Typography>
                                                                                             </ButtonBase>
                                                                                         </div>
@@ -319,7 +314,11 @@ class App extends Component {
                                             </div>
 
                                         ))
-                                        : console.log("No data")
+                                        : (
+                                            <div>
+                                                <img src={slackbot} width={500} height={500} alt="" style={{paddingLeft: "25%", paddingRight: "25%", paddingTop: "10%"}}/>
+                                            </div>
+                                        )
                                 }
                             </div>
                         </Grid>
