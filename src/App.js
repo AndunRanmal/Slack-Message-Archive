@@ -191,6 +191,7 @@ class App extends Component {
 
 
     render() {
+        console.log(this.state.users);
         const {classes} = this.props;
         const {value} = this.state;
         const active_channels = this.state.channels.filter(channel => channel.is_archived === false);
@@ -273,7 +274,11 @@ class App extends Component {
 
                                                             <h5 className="Message-sender"> {this.state.users.find(user => user.name === message.username).real_name}
                                                                 <div className="Message-text">
-                                                                    {Parser(converter.makeHtml(message.message))}
+                                                                    {/*{Parser(converter.makeHtml(message.message).contains("<@U"))}*/}
+                                                                    {message.message.includes("<@U")?
+                                                                        Parser(converter.makeHtml(message.message.replace(message.message.slice(message.message.indexOf("<@U"), message.message.indexOf("<@U")+12), "@"+ this.state.users.find(user => user.id === (message.message.split(">")[0]).slice(-9)).real_name)))
+                                                                        // (this.state.users.find(user => user.id === (message.message.split(">")[0]).slice(2))).real_name + " " + Parser(converter.makeHtml(message.message).split(">")[2])
+                                                                        : Parser(converter.makeHtml(message.message))}
                                                                     {message.files !== undefined ?
                                                                         // console.log(typeof (JSON.parse(message.files)))
                                                                         JSON.parse(message.files).map(file => {
