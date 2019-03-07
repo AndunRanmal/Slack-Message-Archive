@@ -53,7 +53,7 @@
 .Message-container {
     height: 700px;
     overflow: scroll;
-    margin-top: 4px;
+    /*margin-top: 4px;*/
 }
 
 .Message-row {

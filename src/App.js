@@ -16,6 +16,7 @@ import IconButton from '@material-ui/core/IconButton';
 import InfoIcon from '@material-ui/icons/Info';
 import CloudDownload from '@material-ui/icons/CloudDownload';
 import ButtonBase from '@material-ui/core/ButtonBase';
+import LinearProgress from '@material-ui/core/LinearProgress';
 import "./../node_modules/video-react/dist/video-react.css";
 
 import IntegrationAutosuggest from './AutoSuggest';
@@ -48,7 +49,8 @@ class App extends Component {
             fromDate: '',
             toDate: '',
             groups: null,
-            sortedMessages: []
+            sortedMessages: [],
+            loading: false
         };
     }
 
@@ -101,7 +103,8 @@ class App extends Component {
             console.log(sort);
         }));
         this.setState({
-            groups: sort
+            groups: sort,
+            loading: false
         })
     };
 
@@ -110,6 +113,7 @@ class App extends Component {
         this.setState({
             messages: [],
             value: searchTerm,
+            loading: true
 
         }, () => {
             switch (this.state.value) {
@@ -249,6 +253,9 @@ class App extends Component {
                             </AppBar>
                             {/*{table}*/}
                             <div className="Message-container">
+                                {
+                                    this.state.loading? (<LinearProgress  style={{backgroundColor: "#942e95"}} />) : console.log("Loading complete")
+                                }
                                 {
 
                                     this.state.groups !== null ?
