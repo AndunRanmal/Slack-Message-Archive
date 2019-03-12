@@ -1,39 +1,37 @@
 import React, {Component} from 'react';
 import axios from 'axios';
 import moment from 'moment';
-import {Player} from 'video-react';
-
 //Material Ui
 import Grid from "@material-ui/core/Grid";
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
-import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import IconButton from '@material-ui/core/IconButton';
 import InfoIcon from '@material-ui/icons/Info';
-import CloudDownload from '@material-ui/icons/CloudDownload';
-import ButtonBase from '@material-ui/core/ButtonBase';
-import LinearProgress from '@material-ui/core/LinearProgress';
+import PermIdentity from '@material-ui/icons/PermIdentity';
+import Drawer from '@material-ui/core/Drawer';
+import Avatar from "@material-ui/core/Avatar/Avatar";
+import Divider from '@material-ui/core/Divider';
+import ChevronRightIcon from '@material-ui/icons/ChevronRight';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ExpansionPanel from '@material-ui/core/ExpansionPanel';
+import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
+import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import Checkbox from '@material-ui/core/Checkbox';
 import "./../node_modules/video-react/dist/video-react.css";
 
-import IntegrationAutosuggest from './AutoSuggest';
+import MessageContainer from './MessageContainer';
 import './App.css';
-import logo from './icon_slack.png';
-import slackbot from './Slackbot.png';
 import APIs from './const/API';
-
-const env = require('dotenv').config();
-const showdown = require("showdown");
-const Parser = require('html-react-parser');
 
 
 const slack_token = process.env.REACT_APP_SLACKTOKEN;
 console.log(process.env);
 
-const converter = new showdown.Converter();
 let byday = {};
 
 
@@ -50,7 +48,8 @@ class App extends Component {
             toDate: '',
             groups: null,
             sortedMessages: [],
-            loading: false
+            loading: false,
+            members: []
         };
     }
 
@@ -76,9 +75,22 @@ class App extends Component {
     getMessages = (response) => {
         let sort = {};
         byday = {};
+        let channelMembers = this.state.channels.find(channel => channel.name === this.state.value.slice(1).toLocaleLowerCase()).members;
+        let membersInfo = channelMembers.map((member) => ({
+            name: this.state.users.find(user => user.id === member).real_name,
+            avatar: this.state.users.find(user => user.id === member).profile.image_48,
+            displayName:  this.state.users.find(user => user.id === member).name,
+            checked: true
+        }));
+
+        this.setState({
+            members: membersInfo
+        }, () => console.log("members",this.state.members));
+
         response.data.map(message => {
             let username = this.state.users.find(user => user.id === message.sender_Id).name;
             let channel = this.state.channels.find(channel => channel.id === message.channel_Id).name;
+
             let messageInfo = {
                 message_Id: message.message_id,
                 message: message.message,
@@ -189,10 +201,24 @@ class App extends Component {
         return byday;
     };
 
+    handleDrawerOpen = () => {
+        this.setState({ open: true });
+    };
+
+    handleDrawerClose = () => {
+        this.setState({ open: false });
+    };
+
+    handleChange = (member) => {
+        this.state.members[member].checked = !this.state.members[member].checked;
+        this.setState({
+            members: [...this.state.members]
+        }, () => console.log(this.state.members));
+        console.log(member)
+    };
 
     render() {
         console.log(this.state.users);
-        const {classes} = this.props;
         const {value} = this.state;
         const active_channels = this.state.channels.filter(channel => channel.is_archived === false);
         const filteredData = this.state.messages.filter(message => message.timestamp >= this.state.fromDate && message.timestamp <= this.state.toDate);
@@ -202,13 +228,14 @@ class App extends Component {
         } else {
             data = filteredData
         }
+        const { open } = this.state;
 
         return (
             <div className="App">
-                <header className="App-header">
-                    <IntegrationAutosuggest searchQuery={this.handleSubmit}/>
-                    <img src={logo} width={40} height={40} className="Logo-styles" alt=""/>
-                </header>
+                {/*<header className="App-header">*/}
+                    {/*<IntegrationAutosuggest searchQuery={this.handleSubmit}/>*/}
+                    {/*<img src={logo} width={40} height={40} className="Logo-styles" alt=""/>*/}
+                {/*</header>*/}
                 <div>
                     <Grid container>
                         <Grid item xs={3} className="Channels-container">
@@ -242,6 +269,7 @@ class App extends Component {
                                         style={{position: 'absolute', right: 10  }}
                                         aria-haspopup="true"
                                         color="inherit"
+                                        onClick={this.handleDrawerOpen}
                                     >
                                         <InfoIcon/>
                                     </IconButton>
@@ -253,86 +281,64 @@ class App extends Component {
                                 </Toolbar>
                             </AppBar>
                             {/*{table}*/}
-                            <div className="Message-container">
-                                {
-                                    this.state.loading? (<LinearProgress  style={{backgroundColor: "#942e95"}} />) : console.log("Loading complete")
-                                }
-                                {
+                            <div className="Message-container"> 
+                                <MessageContainer groups={this.state.groups} loading={this.state.loading} users={this.state.users} members={this.state.members}/>
 
-                                    this.state.groups !== null ?
+                                <Drawer
+                                    variant="persistent"
+                                    anchor="right"
+                                    open={open}
 
-                                        Object.keys(this.state.groups).map(group => (
-                                            <div>
-                                                <h1 className="Message-date">{moment.unix(Number(group)*(60*60*24)).format("dddd MMMM Do YYYY")}</h1>
-                                                <div>{
+                                >
+                                    <div>
+                                        <IconButton onClick={this.handleDrawerClose}>
+                                            <ChevronRightIcon /> <p style={{fontSize: 16, fontWeight: "700"}}>{"About "+ this.state.value}</p>
+                                        </IconButton>
+                                    </div>
+                                    <Divider />
+                                    <ExpansionPanel style={{width: 300}}>
+                                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                                            <InfoIcon style={{color: "#4789e5", paddingRight: 10, paddingBottom: 10}}/>
+                                            <Typography style={{fontWeight: "600"}}> Channel Details </Typography>
+                                        </ExpansionPanelSummary>
+                                        <ExpansionPanelDetails>
+                                            <Typography>
+                                                {this.state.channels !== [] && this.state.value !== ''?
+                                                    this.state.channels.find(channel => channel.name === this.state.value.slice(1).toLocaleLowerCase()).purpose.value : console.log("loading")}
+                                            </Typography>
+                                        </ExpansionPanelDetails>
+                                    </ExpansionPanel>
+                                    <ExpansionPanel defaultExpanded style={{width: 300}}>
+                                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                                            <PermIdentity style={{color: "#0ca92d", paddingRight: 10, paddingBottom: 10}}/>
+                                            <Typography style={{fontWeight: "600"}}> Members </Typography>
+                                        </ExpansionPanelSummary>
+                                    <ExpansionPanelDetails>
+                                        <List>
+                                            {this.state.members !== [] && this.state.value !== ''?
+                                                Object.keys(this.state.members).map((member) => (
+                                                    <div>
+                                                        <ListItem button key={member}>
+                                                            <ListItemIcon>
+                                                                <Avatar src={this.state.members[member].avatar} style={{width:30, height:30}}/>
+                                                            </ListItemIcon>
+                                                            {/*{this.state.users.find(user => user.id === member).name}*/}
+                                                            <ListItemText secondary={this.state.members[member].name} />
+                                                            <Checkbox
+                                                            checked={this.state.members[member].checked}
+                                                            onChange={() => this.handleChange(member)}
+                                                            />
+                                                        </ListItem>
+                                                    </div>
 
-                                                    this.state.groups[group].map(message => (
-                                                        <div className="Message-row">
-                                                            <Avatar
-                                                                src={this.state.users.find(user => user.name === message.username).profile.image_72}
-                                                                width={30} height={30} alt="pp"/>
-
-                                                            <h5 className="Message-sender"> {this.state.users.find(user => user.name === message.username).real_name}
-                                                                <div className="Message-text">
-                                                                    {/*{Parser(converter.makeHtml(message.message).contains("<@U"))}*/}
-                                                                    {message.message.includes("<@U")?
-                                                                        Parser(converter.makeHtml(message.message.replace(message.message.slice(message.message.indexOf("<@U"), message.message.indexOf("<@U")+12), "@"+ this.state.users.find(user => user.id === (message.message.split(">")[0]).slice(-9)).real_name)))
-                                                                        // (this.state.users.find(user => user.id === (message.message.split(">")[0]).slice(2))).real_name + " " + Parser(converter.makeHtml(message.message).split(">")[2])
-                                                                        : Parser(converter.makeHtml(message.message))}
-                                                                    {message.files !== undefined ?
-                                                                        // console.log(typeof (JSON.parse(message.files)))
-                                                                        JSON.parse(message.files).map(file => {
-                                                                            switch (file.filetype) {
-                                                                                case 'jpg' || 'jpeg' || 'png' || 'svg' || 'gif':
-                                                                                    return(
-                                                                                        <img src={file.url_private} width={400} height={300} alt=""/>
-                                                                                    );
-                                                                                case 'mp4' || 'avi' || 'wmv':
-                                                                                    return(
-                                                                                        <Player src={file.url_private} fluid={false} height={300} width={400} alt=""/>
-                                                                                    );
-                                                                                default:
-                                                                                    return(
-                                                                                        <div>
-                                                                                            <ButtonBase
-                                                                                                focusRipple
-                                                                                                key={file.id}
-                                                                                                style={{width: 400, padding: 20, borderStyle: 'solid', borderWidth: 1, borderColor: "#d1cece", borderRadius: 7}}
-                                                                                                onClick={() => window.location = file.url_private_download}>
-                                                                                                <CloudDownload style={{position: 'absolute',right: 355, color: "#7dc1de"}}/>
-                                                                                                <Typography style={{fontWeight: "700"}}>
-                                                                                                    {file.name}
-                                                                                                    <Typography>
-                                                                                                        {Number(file.size)/(1024 * 1024) >= 1? Math.round(Number(file.size)/(1024 * 1024))+" MB " : Math.round(Number(file.size)/(1024))+" kb" }
-                                                                                                    </Typography>
-                                                                                                </Typography>
-                                                                                            </ButtonBase>
-                                                                                        </div>
-                                                                                    );
-                                                                            }
-                                                                            // if (file.filetype === 'jpg' || 'jpeg' || 'png' || 'svg' || 'gif') {
-                                                                            //     return(
-                                                                            //         <img src={file.url_private} width={400} height={300} alt=""/>
-                                                                            //     )
-                                                                            // }
-                                                                        })
-                                                                        : console.log("No files")}
-                                                                </div>
-                                                            </h5>
-                                                            <p className="Message-time">{moment.unix(message.timestamp).format('h:mm a')}</p>
-                                                        </div>
-                                                    ))
-                                                }</div>
-                                            </div>
-
-                                        ))
-                                        : (
-                                            <div>
-                                                <img src={slackbot} width={500} height={500} alt="" style={{paddingLeft: "25%", paddingRight: "25%", paddingTop: "10%"}}/>
-                                            </div>
-                                        )
-                                }
+                                            )) : console.log("Loading")}
+                                        </List>
+                                    </ExpansionPanelDetails>
+                                    </ExpansionPanel>
+                                    <Divider />
+                                </Drawer>
                             </div>
+
                         </Grid>
                     </Grid>
                 </div>

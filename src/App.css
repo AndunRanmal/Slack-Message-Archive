@@ -45,13 +45,13 @@
 }
 
 .Channel-list {
-    height: 710px;
+    height: 720px;
     overflow: scroll;
     background-color: #3F0F3F;
 }
 
 .Message-container {
-    height: 700px;
+    height: 725px;
     overflow: scroll;
     /*margin-top: 4px;*/
 }
