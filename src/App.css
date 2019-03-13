@@ -92,7 +92,7 @@
 }
 .Message-date:before, .Message-date:after {
     position: absolute;
-    top: 51%;
+    top: 50%;
     overflow: hidden;
     width: 50%;
     height: 1px;
@@ -100,8 +100,39 @@
     background-color: #abb1a9;
 }
 .Message-date:before {
-    margin-left: -50%;
+    margin-left: -51%;
     text-align: right;
+}
+.Message-date:after {
+    margin-left: 1%;
+}
+
+.Join-channel-headText {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 500;
+    color: #5b6159;
+}
+
+.Join-channel-text {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: #7f857d;
+}
+
+.Join-channel{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.Join-channel-button {
+    background-color: #029b0d;
+    color: #029b0d;
 }
 
 

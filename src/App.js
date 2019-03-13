@@ -24,12 +24,14 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Checkbox from '@material-ui/core/Checkbox';
 import "./../node_modules/video-react/dist/video-react.css";
 
+
 import MessageContainer from './MessageContainer';
 import './App.css';
 import APIs from './const/API';
 
 
 const slack_token = process.env.REACT_APP_SLACKTOKEN;
+const OAuth = process.env.REACT_APP_SLACKOAUTH;
 console.log(process.env);
 
 let byday = {};
@@ -79,13 +81,13 @@ class App extends Component {
         let membersInfo = channelMembers.map((member) => ({
             name: this.state.users.find(user => user.id === member).real_name,
             avatar: this.state.users.find(user => user.id === member).profile.image_48,
-            displayName:  this.state.users.find(user => user.id === member).name,
+            displayName: this.state.users.find(user => user.id === member).name,
             checked: true
         }));
 
         this.setState({
             members: membersInfo
-        }, () => console.log("members",this.state.members));
+        }, () => console.log("members", this.state.members));
 
         response.data.map(message => {
             let username = this.state.users.find(user => user.id === message.sender_Id).name;
@@ -109,7 +111,7 @@ class App extends Component {
         this.setState({
             groups: byday
         }, () => Object.keys(this.state.groups).map(group => {
-            this.state.groups[group].sort((a, b) => a.timestamp < b.timestamp? -1 : 1);
+            this.state.groups[group].sort((a, b) => a.timestamp < b.timestamp ? -1 : 1);
 
             sort[group] = this.state.groups[group];
             console.log(sort);
@@ -192,21 +194,20 @@ class App extends Component {
     };
 
 
-
     groupday = (value, index, array) => {
         let d = moment.unix(Number(value.timestamp));
-        d = Math.floor(d._d.getTime()/(1000*60*60*24));
-        byday[d]=byday[d]||[];
+        d = Math.floor(d._d.getTime() / (1000 * 60 * 60 * 24));
+        byday[d] = byday[d] || [];
         byday[d].push(value);
         return byday;
     };
 
     handleDrawerOpen = () => {
-        this.setState({ open: true });
+        this.setState({open: true});
     };
 
     handleDrawerClose = () => {
-        this.setState({ open: false });
+        this.setState({open: false});
     };
 
     handleChange = (member) => {
@@ -218,7 +219,7 @@ class App extends Component {
     };
 
     render() {
-        console.log(this.state.users);
+        console.log(this.state.channels);
         const {value} = this.state;
         const active_channels = this.state.channels.filter(channel => channel.is_archived === false);
         const filteredData = this.state.messages.filter(message => message.timestamp >= this.state.fromDate && message.timestamp <= this.state.toDate);
@@ -228,13 +229,13 @@ class App extends Component {
         } else {
             data = filteredData
         }
-        const { open } = this.state;
+        const {open} = this.state;
 
         return (
             <div className="App">
                 {/*<header className="App-header">*/}
-                    {/*<IntegrationAutosuggest searchQuery={this.handleSubmit}/>*/}
-                    {/*<img src={logo} width={40} height={40} className="Logo-styles" alt=""/>*/}
+                {/*<IntegrationAutosuggest searchQuery={this.handleSubmit}/>*/}
+                {/*<img src={logo} width={40} height={40} className="Logo-styles" alt=""/>*/}
                 {/*</header>*/}
                 <div>
                     <Grid container>
@@ -263,10 +264,10 @@ class App extends Component {
                             </div>
                         </Grid>
                         <Grid item xs={9}>
-                            <AppBar position="static" style={{ backgroundColor: '#2d162d'}}>
+                            <AppBar position="static" style={{backgroundColor: '#2d162d'}}>
                                 <Toolbar>
                                     <IconButton
-                                        style={{position: 'absolute', right: 10  }}
+                                        style={{position: 'absolute', right: 10}}
                                         aria-haspopup="true"
                                         color="inherit"
                                         onClick={this.handleDrawerOpen}
@@ -281,8 +282,9 @@ class App extends Component {
                                 </Toolbar>
                             </AppBar>
                             {/*{table}*/}
-                            <div className="Message-container"> 
-                                <MessageContainer groups={this.state.groups} loading={this.state.loading} users={this.state.users} members={this.state.members}/>
+                            <div className="Message-container">
+                                <MessageContainer groups={this.state.groups} loading={this.state.loading}
+                                                  users={this.state.users} members={this.state.members} value={this.state.value} channels={this.state.channels}/>
 
                                 <Drawer
                                     variant="persistent"
@@ -292,50 +294,55 @@ class App extends Component {
                                 >
                                     <div>
                                         <IconButton onClick={this.handleDrawerClose}>
-                                            <ChevronRightIcon /> <p style={{fontSize: 16, fontWeight: "700"}}>{"About "+ this.state.value}</p>
+                                            <ChevronRightIcon/> <p
+                                            style={{fontSize: 16, fontWeight: "700"}}>{"About " + this.state.value}</p>
                                         </IconButton>
                                     </div>
-                                    <Divider />
+                                    <Divider/>
+
                                     <ExpansionPanel style={{width: 300}}>
-                                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                                            <InfoIcon style={{color: "#4789e5", paddingRight: 10, paddingBottom: 10}}/>
-                                            <Typography style={{fontWeight: "600"}}> Channel Details </Typography>
+                                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon/>}>
+                                            <InfoIcon style={{color: "#4789e5", paddingRight: 10}}/>
+                                            <Typography style={{fontWeight: "550"}}> Channel Details </Typography>
                                         </ExpansionPanelSummary>
                                         <ExpansionPanelDetails>
                                             <Typography>
-                                                {this.state.channels !== [] && this.state.value !== ''?
+                                                {this.state.channels !== [] && this.state.value !== '' ?
                                                     this.state.channels.find(channel => channel.name === this.state.value.slice(1).toLocaleLowerCase()).purpose.value : console.log("loading")}
                                             </Typography>
                                         </ExpansionPanelDetails>
                                     </ExpansionPanel>
-                                    <ExpansionPanel defaultExpanded style={{width: 300}}>
-                                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                                            <PermIdentity style={{color: "#0ca92d", paddingRight: 10, paddingBottom: 10}}/>
-                                            <Typography style={{fontWeight: "600"}}> Members </Typography>
-                                        </ExpansionPanelSummary>
-                                    <ExpansionPanelDetails>
-                                        <List>
-                                            {this.state.members !== [] && this.state.value !== ''?
-                                                Object.keys(this.state.members).map((member) => (
-                                                    <div>
-                                                        <ListItem button key={member}>
-                                                            <ListItemIcon>
-                                                                <Avatar src={this.state.members[member].avatar} style={{width:30, height:30}}/>
-                                                            </ListItemIcon>
-                                                            {/*{this.state.users.find(user => user.id === member).name}*/}
-                                                            <ListItemText secondary={this.state.members[member].name} />
-                                                            <Checkbox
-                                                            checked={this.state.members[member].checked}
-                                                            onChange={() => this.handleChange(member)}
-                                                            />
-                                                        </ListItem>
-                                                    </div>
 
-                                            )) : console.log("Loading")}
-                                        </List>
-                                    </ExpansionPanelDetails>
+                                    <ExpansionPanel defaultExpanded style={{width: 300}}>
+                                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon/>}>
+                                            <PermIdentity style={{color: "#0ca92d", paddingRight: 10}}/>
+                                            <Typography style={{fontWeight: "550"}}> Members </Typography>
+                                        </ExpansionPanelSummary>
+                                        <ExpansionPanelDetails style={{marginTop: -20}}>
+                                            <List>
+                                                {this.state.members !== [] && this.state.value !== '' ?
+                                                    Object.keys(this.state.members).map((member) => (
+                                                        <div>
+                                                            <ListItem button key={member} style={{marginTop: -5}}>
+                                                                <ListItemIcon>
+                                                                    <Avatar src={this.state.members[member].avatar}
+                                                                            style={{width: 30, height: 30}}/>
+                                                                </ListItemIcon>
+                                                                {/*{this.state.users.find(user => user.id === member).name}*/}
+                                                                <ListItemText
+                                                                    secondary={this.state.members[member].name}/>
+                                                                <Checkbox
+                                                                    checked={this.state.members[member].checked}
+                                                                    onChange={() => this.handleChange(member)}
+                                                                />
+                                                            </ListItem>
+                                                        </div>
+
+                                                    )) : console.log("Loading")}
+                                            </List>
+                                        </ExpansionPanelDetails>
                                     </ExpansionPanel>
-                                    <Divider />
+                                    <Divider/>
                                 </Drawer>
                             </div>
 
