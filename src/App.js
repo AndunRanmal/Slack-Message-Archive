@@ -21,6 +21,7 @@ import ExpansionPanel from '@material-ui/core/ExpansionPanel';
 import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import LockIcon from '@material-ui/icons/Lock';
 import Checkbox from '@material-ui/core/Checkbox';
 import "./../node_modules/video-react/dist/video-react.css";
 
@@ -32,7 +33,7 @@ import APIs from './const/API';
 
 const slack_token = process.env.REACT_APP_SLACKTOKEN;
 const OAuth = process.env.REACT_APP_SLACKOAUTH;
-console.log(process.env);
+console.log(slack_token);
 
 let byday = {};
 
@@ -51,7 +52,10 @@ class App extends Component {
             groups: null,
             sortedMessages: [],
             loading: false,
-            members: []
+            members: [],
+            userId: '',
+            conversations: [],
+            privateChannels: []
         };
     }
 
@@ -61,75 +65,135 @@ class App extends Component {
                 console.log(response);
                 this.setState({
                     users: response.data.members
-                }, () => () => console.log(this.state.users))
+                })
             })
             .catch(err => console.log(err));
+
+        axios.post(APIs.slack.slack_auth_test + "?token=" + OAuth)
+            .then(res => this.setState({
+                userId: res.data.user_id
+            }));
 
         axios.get(APIs.slack.slack_channels + "?token=" + slack_token)
             .then(response => {
                 this.setState({
                     channels: response.data.channels
-                }, () => console.log(this.state.channels))
+                })
             })
             .catch(err => console.log(err));
+
+        axios.get(APIs.slack.slack_user_conversation + "?token=" + OAuth + "&types=private_channel")
+            .then(response => {
+                let privateChannels = response.data.channels.filter(channel => channel.is_archived === false);
+                privateChannels.sort((a, b) => (a.last_read > b.last_read) ? 0 : ((b.last_read > a.last_read) ? 0 : -1));
+                privateChannels.reverse();
+                this.setState({
+                    privateChannels: privateChannels
+                })
+            })
+            .catch(err => console.log(err));
+
+        axios.get(APIs.slack.slack_user_conversation + "?token=" + OAuth + "&types=mpim")
+            .then(response => {
+                let conversations = response.data.channels.filter(channel => channel.is_archived === false);
+                conversations.sort((a, b) => (a.last_read > b.last_read) ? 0 : ((b.last_read > a.last_read) ? 0 : -1));
+                conversations.reverse();
+                this.setState({
+                    conversations: conversations
+                })
+            })
+            .catch(err => console.log(err))
+
     }
 
-    getMessages = (response) => {
+    mapMessagesToGroups = (response) => {
         let sort = {};
         byday = {};
-        let channelMembers = this.state.channels.find(channel => channel.name === this.state.value.slice(1).toLocaleLowerCase()).members;
-        let membersInfo = channelMembers.map((member) => ({
-            name: this.state.users.find(user => user.id === member).real_name,
-            avatar: this.state.users.find(user => user.id === member).profile.image_48,
-            displayName: this.state.users.find(user => user.id === member).name,
-            checked: true
-        }));
-
-        this.setState({
-            members: membersInfo
-        }, () => console.log("members", this.state.members));
-
         response.data.map(message => {
             let username = this.state.users.find(user => user.id === message.sender_Id).name;
-            let channel = this.state.channels.find(channel => channel.id === message.channel_Id).name;
+
 
             let messageInfo = {
                 message_Id: message.message_id,
                 message: message.message,
                 username: username,
                 timestamp: message.timestamp,
-                channel: channel,
+                // channel: channel,
                 files: message.files
             };
             this.setState({
-                groups: null,
+                // groups: null,
                 messages: [...this.state.messages, messageInfo]
-            })
+            });
+            return this.state
         });
         //sorting messages inside a group
         this.state.messages.map(this.groupday);
         this.setState({
             groups: byday
         }, () => Object.keys(this.state.groups).map(group => {
-            this.state.groups[group].sort((a, b) => a.timestamp < b.timestamp ? -1 : 1);
+                this.state.groups[group].sort((a, b) => a.timestamp < b.timestamp ? -1 : 1);
 
-            sort[group] = this.state.groups[group];
-            console.log(sort);
-        }));
+                sort[group] = this.state.groups[group];
+                return sort
+            }
+        ));
         this.setState({
             groups: sort,
             loading: false
         })
     };
 
+    getMessagesByChannel = (response) => {
+        let channelMembers = this.state.channels.find(channel => channel.name === this.state.value.slice(1).toLocaleLowerCase()).members;
+        let membersInfo = channelMembers.map((member) => ({
+            name: this.state.users.find(user => user.id === member).real_name,
+            avatar: this.state.users.find(user => user.id === member).profile.image_48,
+            displayName: this.state.users.find(user => user.id === member).name,
+            checked: true,
+            id: member
+        }));
+
+        this.setState({
+            members: membersInfo
+        }, () => console.log(this.state.members));
+
+        this.mapMessagesToGroups(response)
+    };
+
+    getMessagesByGroup = (response, id) => {
+        axios.get(APIs.slack.slack_group_info + "?token=" + OAuth + "&channel=" + id)
+            .then(res => {
+                let members = res.data.group.members;
+                let membersInfo = members.map((member) => ({
+                    name: this.state.users.find(user => user.id === member).real_name,
+                    avatar: this.state.users.find(user => user.id === member).profile.image_48,
+                    displayName: this.state.users.find(user => user.id === member).name,
+                    checked: true,
+                    id: member
+                }));
+
+                this.setState({
+                    members: membersInfo
+                });
+                // let channel = this.state.conversations.find(channel => channel.id === id).name;
+                this.mapMessagesToGroups(response)
+
+            })
+            .catch(err => console.log(err));
+    };
+
 
     handleSubmit = (searchTerm) => {
+        console.log("debug", this.state.value);
         this.setState({
             messages: [],
             value: searchTerm,
-            loading: true
-
+            loading: true,
+            members: [],
+            groups: []
         }, () => {
+            console.log("initial state", this.state);
             switch (this.state.value) {
                 case ("@" + this.state.value.slice(1)):
                     let username = this.state.value.slice(1).toLocaleLowerCase();
@@ -140,7 +204,7 @@ class App extends Component {
                             if (response.data.length === 0) {
                                 console.log("No record found");
                             }
-                            this.getMessages(response);
+                            this.getMessagesByChannel(response);
                         })
                         .catch(err => {
                             console.log(err);
@@ -159,7 +223,27 @@ class App extends Component {
                                 console.log("No record found");
                             }
                             console.log(response.data);
-                            this.getMessages(response)
+                            this.getMessagesByChannel(response)
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            this.setState({
+                                messages: []
+                            })
+                        });
+                    break;
+                case ("mpdm-" + this.state.value.slice(5)):
+                    let conversationName = this.state.value;
+                    console.log(conversationName);
+                    let conversation_Id = this.state.conversations.find(chat => chat.name === conversationName).id;
+                    console.log(conversation_Id);
+                    axios.get(APIs.aws.base_url + "/chats?text=_" + conversation_Id)
+                        .then(response => {
+                            if (response.data.length === 0) {
+                                console.log("No record found");
+                            }
+                            console.log(response.data);
+                            this.getMessagesByGroup(response, conversation_Id)
                         })
                         .catch(err => {
                             console.log(err);
@@ -169,12 +253,17 @@ class App extends Component {
                         });
                     break;
                 default:
-                    axios.get(APIs.aws.base_url + "/chats?text=" + this.state.value.toLocaleLowerCase())
+                    let privateChannel = this.state.value;
+                    console.log(conversationName);
+                    let privateChannelId = this.state.privateChannels.find(chat => chat.name === privateChannel).id;
+                    console.log(privateChannelId);
+                    axios.get(APIs.aws.base_url + "/chats?text=_" + privateChannelId)
                         .then(response => {
                             if (response.data.length === 0) {
                                 console.log("No record found");
                             }
-                            this.getMessages(response)
+                            console.log(response.data);
+                            this.getMessagesByGroup(response, privateChannelId)
                         })
                         .catch(err => {
                             console.log(err);
@@ -215,13 +304,59 @@ class App extends Component {
         this.setState({
             members: [...this.state.members]
         }, () => console.log(this.state.members));
-        console.log(member)
+    };
+
+    renderMessages = (value) => {
+        switch (value) {
+            case ("#" + this.state.value.slice(1)):
+                return (
+                    <MessageContainer groups={this.state.groups} loading={this.state.loading}
+                                      users={this.state.users} members={this.state.members} value={this.state.value}
+                                      channels={this.state.channels} slice={1}/>
+                );
+            case ("mpdm-" + this.state.value.slice(5)):
+                return (
+                    <MessageContainer groups={this.state.groups} loading={this.state.loading}
+                                      users={this.state.users} members={this.state.members} value={this.state.value}
+                                      channels={this.state.conversations} slice={0}/>
+                );
+            default:
+                return (
+                    <MessageContainer groups={this.state.groups} loading={this.state.loading}
+                                      users={this.state.users} members={this.state.members} value={this.state.value}
+                                      channels={this.state.privateChannels}/>
+                )
+
+
+        }
+    };
+
+    renderChannelPurpose = () => {
+        switch (this.state.value) {
+            case ("#" + this.state.value.slice(1)):
+                return (
+                    <Typography>
+                        {this.state.channels.find(channel => channel.name === this.state.value.slice(1).toLocaleLowerCase()).purpose.value}
+                    </Typography>
+                );
+            case ("mpdm-" + this.state.value.slice(5)):
+                return (
+                    <Typography>
+                        {this.state.conversations.find(channel => channel.name === this.state.value).purpose.value}
+                    </Typography>
+                );
+            default:
+                return (
+                    <Typography>
+                        {this.state.privateChannels.find(channel => channel.name === this.state.value).purpose.value}
+                    </Typography>
+                )
+        }
     };
 
     render() {
-        console.log(this.state.channels);
         const {value} = this.state;
-        const active_channels = this.state.channels.filter(channel => channel.is_archived === false);
+        const active_channels = this.state.channels.filter(channel => channel.is_archived === false && channel.members.includes(this.state.userId));
         const filteredData = this.state.messages.filter(message => message.timestamp >= this.state.fromDate && message.timestamp <= this.state.toDate);
         let data;
         if (this.state.toDate === "" && this.state.fromDate === "") {
@@ -233,10 +368,6 @@ class App extends Component {
 
         return (
             <div className="App">
-                {/*<header className="App-header">*/}
-                {/*<IntegrationAutosuggest searchQuery={this.handleSubmit}/>*/}
-                {/*<img src={logo} width={40} height={40} className="Logo-styles" alt=""/>*/}
-                {/*</header>*/}
                 <div>
                     <Grid container>
                         <Grid item xs={3} className="Channels-container">
@@ -251,7 +382,7 @@ class App extends Component {
                                                 <ListItem key={value} button
                                                           onClick={() => this.handleSubmit("#" + channel.name)}>
                                                     <ListItemText primary={<Typography style={{
-                                                        color: '#fff',
+                                                        color: '#d8d8d8',
                                                         fontSize: 15,
                                                         fontWeight: "500",
                                                         marginLeft: 10
@@ -259,7 +390,54 @@ class App extends Component {
                                                 </ListItem>
                                                 {/*<Divider light/>*/}
                                             </div>
-                                        ))}
+                                        ))
+                                    }
+                                    {
+                                        this.state.privateChannels.slice(0, 6).map(chat => (
+                                            <div>
+                                                <ListItem key={value} button
+                                                          onClick={() => this.handleSubmit(chat.name)}>
+                                                    <LockIcon style={{
+                                                        color: "#949494",
+                                                        fontSize: 16,
+                                                        marginRight: -12,
+                                                        marginLeft: 5
+                                                    }}/>
+                                                    <ListItemText primary={
+                                                        <Typography style={{
+                                                            color: '#d8d8d8',
+                                                            fontSize: 15,
+                                                            fontWeight: "500",
+                                                        }}> {chat.name} </Typography>}/>
+                                                </ListItem>
+                                                {/*<Divider light/>*/}
+                                            </div>
+                                        ))
+                                    }
+                                    <p style={{
+                                        color: "#fff",
+                                        fontWeight: "700",
+                                        marginLeft: 10,
+                                        fontSize: 16
+                                    }}> Conversations </p>
+                                    {
+                                        this.state.conversations.slice(0, 6).map(chat => (
+                                            <div>
+                                                <ListItem key={value} button
+                                                          onClick={() => this.handleSubmit(chat.name)}>
+                                                    <ListItemText primary={
+                                                        <Typography style={{
+                                                            color: '#d8d8d8',
+                                                            fontSize: 15,
+                                                            fontWeight: "500",
+                                                            marginLeft: 10
+                                                        }}> {chat.name.slice(5, -2).split("--").join(", ")} </Typography>}/>
+                                                </ListItem>
+                                                {/*<Divider light/>*/}
+                                            </div>
+                                        ))
+                                    }
+
                                 </List>
                             </div>
                         </Grid>
@@ -275,7 +453,7 @@ class App extends Component {
                                         <InfoIcon/>
                                     </IconButton>
                                     <Typography variant="h6" color="inherit" noWrap>
-                                        {this.state.value}
+                                        {this.state.value.startsWith("mpdm")? this.state.value.slice(5, -2).split("--").join(", ") : this.state.value}
                                     </Typography>
                                     {/*<div className={classes.grow} />*/}
 
@@ -283,8 +461,11 @@ class App extends Component {
                             </AppBar>
                             {/*{table}*/}
                             <div className="Message-container">
-                                <MessageContainer groups={this.state.groups} loading={this.state.loading}
-                                                  users={this.state.users} members={this.state.members} value={this.state.value} channels={this.state.channels}/>
+
+                                {/*<MessageContainer groups={this.state.groups} loading={this.state.loading}*/}
+                                {/*users={this.state.users} members={this.state.members} value={this.state.value} channels={this.state.channels}/>*/}
+
+                                {this.renderMessages(this.state.value)}
 
                                 <Drawer
                                     variant="persistent"
@@ -295,7 +476,7 @@ class App extends Component {
                                     <div>
                                         <IconButton onClick={this.handleDrawerClose}>
                                             <ChevronRightIcon/> <p
-                                            style={{fontSize: 16, fontWeight: "700"}}>{"About " + this.state.value}</p>
+                                            style={{fontSize: 16, fontWeight: "700", width: 200}}>{"About this channel"}</p>
                                         </IconButton>
                                     </div>
                                     <Divider/>
@@ -306,10 +487,10 @@ class App extends Component {
                                             <Typography style={{fontWeight: "550"}}> Channel Details </Typography>
                                         </ExpansionPanelSummary>
                                         <ExpansionPanelDetails>
-                                            <Typography>
+
                                                 {this.state.channels !== [] && this.state.value !== '' ?
-                                                    this.state.channels.find(channel => channel.name === this.state.value.slice(1).toLocaleLowerCase()).purpose.value : console.log("loading")}
-                                            </Typography>
+                                                    this.renderChannelPurpose() : console.log("loading")}
+
                                         </ExpansionPanelDetails>
                                     </ExpansionPanel>
 
