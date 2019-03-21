@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import axios from 'axios';
 import moment from 'moment';
+
 //Material Ui
 import Grid from "@material-ui/core/Grid";
 import List from '@material-ui/core/List';
@@ -78,7 +79,7 @@ class App extends Component {
             .then(response => {
                 this.setState({
                     channels: response.data.channels
-                })
+                }, () => console.log(this.state.channels))
             })
             .catch(err => console.log(err));
 
@@ -480,7 +481,6 @@ class App extends Component {
                                         </IconButton>
                                     </div>
                                     <Divider/>
-
                                     <ExpansionPanel style={{width: 300}}>
                                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon/>}>
                                             <InfoIcon style={{color: "#4789e5", paddingRight: 10}}/>
@@ -493,7 +493,6 @@ class App extends Component {
 
                                         </ExpansionPanelDetails>
                                     </ExpansionPanel>
-
                                     <ExpansionPanel defaultExpanded style={{width: 300}}>
                                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon/>}>
                                             <PermIdentity style={{color: "#0ca92d", paddingRight: 10}}/>
